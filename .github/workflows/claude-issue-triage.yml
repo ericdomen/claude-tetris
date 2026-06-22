@@ -2,14 +2,16 @@ name: Claude Issue Triage
 
 on:
   issues:
-    types: [opened]
+    types: [opened, edited]
 
 jobs:
   triage:
-    # Skip issues already targeted at the interactive @claude workflow (claude.yml)
+    # Skip issues targeted at the interactive @claude workflow (claude.yml), and
+    # skip edits made by the bot itself (gh issue edit below fires 'edited' again -> would loop)
     if: |
       !contains(github.event.issue.body, '@claude') &&
-      !contains(github.event.issue.title, '@claude')
+      !contains(github.event.issue.title, '@claude') &&
+      github.event.sender.type != 'Bot'
     runs-on: ubuntu-latest
     permissions:
       contents: read
