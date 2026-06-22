@@ -1,0 +1,70 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  triage:
+    # Skip issues already targeted at the interactive @claude workflow (claude.yml)
+    if: |
+      !contains(github.event.issue.body, '@claude') &&
+      !contains(github.event.issue.title, '@claude')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Issue Triage
+        id: claude-triage
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: '--allowed-tools "Bash(gh issue *),Bash(gh label *),Bash(gh api *),Read,Glob,Grep"'
+          prompt: |
+            Eres un triager de issues para este repositorio (Tetris en HTML5 Canvas + CSS + JS vanilla,
+            ver CLAUDE.md). El issue #${{ github.event.issue.number }} se acaba de abrir.
+
+            Haz lo siguiente, en orden:
+
+            1. Lee el issue: `gh issue view ${{ github.event.issue.number }} --json title,body,labels`.
+
+            2. Lista los labels existentes del repo: `gh label list`. Elige los labels apropiados
+               para este issue (tipo: bug/enhancement/question; área: rendering/scoring/controls/
+               docs, etc.; severidad si aplica). Si un label apropiado no existe, créalo primero con
+               `gh label create "<nombre>" --color <hex-sin-#> --description "<desc corta>"`, y luego
+               aplícalo junto con el resto: `gh issue edit ${{ github.event.issue.number }} --add-label "labelA,labelB"`.
+
+            3. Inspecciona el código relevante (game.js, index.html, style.css) con Read/Grep para
+               fundamentar tu análisis técnicamente antes de escribir el diagnóstico.
+
+            4. Escribe un diagnóstico general en español con esta estructura markdown:
+               - **Resumen del problema**
+               - **Área/archivo probablemente afectado** (referencia funciones o líneas si las identificas)
+               - **Causa raíz hipotética**
+               - **Pasos sugeridos para la solución** (alto nivel, sin escribir el código final —
+                 esto es solo diagnóstico para guiar el trabajo posterior)
+
+               No implementes la solución, no edites game.js/index.html/style.css. Solo diagnostica.
+
+            5. Añade ese diagnóstico al cuerpo del issue SIN borrar el texto original del autor:
+               - Obtén el body actual: `gh issue view ${{ github.event.issue.number }} --json body -q .body`
+               - Si el body ya contiene el marcador `<!-- claude-diagnosis -->`, reemplaza solo el
+                 contenido entre ese marcador y `<!-- /claude-diagnosis -->` (para evitar duplicados
+                 si el workflow corre más de una vez sobre el mismo issue).
+               - Si no existe el marcador, añade al final del body original una nueva sección:
+                 ```
+                 <!-- claude-diagnosis -->
+                 ---
+                 ### 🔍 Diagnóstico automático (Claude)
+                 <contenido del diagnóstico>
+                 <!-- /claude-diagnosis -->
+                 ```
+               - Escribe el resultado a un archivo temporal y aplícalo con:
+                 `gh issue edit ${{ github.event.issue.number }} --body-file <tmpfile>`
