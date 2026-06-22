@@ -55,18 +55,27 @@ jobs:
 
                No implementes la solución, no edites game.js/index.html/style.css. Solo diagnostica.
 
-            5. Añade ese diagnóstico al cuerpo del issue SIN borrar el texto original del autor:
+            5. Añade ese diagnóstico al cuerpo del issue SIN borrar ni modificar una sola línea del
+               texto original del autor (cópialo tal cual, byte por byte, antes de la sección nueva):
                - Obtén el body actual: `gh issue view ${{ github.event.issue.number }} --json body -q .body`
                - Si el body ya contiene el marcador `<!-- claude-diagnosis -->`, reemplaza solo el
                  contenido entre ese marcador y `<!-- /claude-diagnosis -->` (para evitar duplicados
-                 si el workflow corre más de una vez sobre el mismo issue).
-               - Si no existe el marcador, añade al final del body original una nueva sección:
+                 si el workflow corre más de una vez sobre el mismo issue). El resto del body
+                 (incluyendo todo lo que esté antes del marcador) se mantiene intacto.
+               - Si no existe el marcador, añade al final del body original (con una línea en blanco
+                 de separación) una nueva sección usando markdown compatible con el render de GitHub
+                 (encabezados `###`, listas `-`, bloques de código con triple backtick, sin HTML
+                 crudo salvo `<details>`/`<summary>` que GitHub sí soporta):
                  ```
                  <!-- claude-diagnosis -->
                  ---
-                 ### 🔍 Diagnóstico automático (Claude)
-                 <contenido del diagnóstico>
+                 <details>
+                 <summary>🔍 Diagnóstico automático (Claude)</summary>
+
+                 <contenido del diagnóstico en markdown>
+
+                 </details>
                  <!-- /claude-diagnosis -->
                  ```
-               - Escribe el resultado a un archivo temporal y aplícalo con:
-                 `gh issue edit ${{ github.event.issue.number }} --body-file <tmpfile>`
+               - Escribe el resultado completo (body original + sección nueva) a un archivo temporal
+                 y aplícalo con: `gh issue edit ${{ github.event.issue.number }} --body-file <tmpfile>`
