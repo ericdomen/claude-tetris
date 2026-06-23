@@ -160,6 +160,39 @@ body {
   transform: translateX(18px);
 }
 
+/* ---- Skin select ---- */
+.skin-select {
+  background: var(--kbd-bg);
+  color: var(--text);
+  border: 1px solid var(--kbd-border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ---- Skins ---- */
+body[data-skin="neon"] {
+  --board-bg: #000000;
+  --board-border: #00ffe0;
+  --board-shadow: rgba(0, 255, 224, 0.35);
+  --grid-line: #0a2a28;
+  --block-highlight: rgba(255, 255, 255, 0.5);
+}
+
+body[data-skin="pastel"] {
+  --board-border: #d9cfe8;
+  --board-shadow: rgba(120, 100, 160, 0.15);
+  --grid-line: #ece4f5;
+  --block-highlight: rgba(255, 255, 255, 0.55);
+}
+
+body[data-skin="pixel"] {
+  --grid-line: #333;
+  --block-highlight: rgba(255, 255, 255, 0.18);
+}
+
 /* ---- Controles ---- */
 .controls ul {
   list-style: none;

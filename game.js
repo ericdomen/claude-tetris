@@ -29,6 +29,53 @@ const PIECES = [
   [[8,8,8],[8,0,8],[8,8,8]],                  // Tuerca - marco con hueco central
 ];
 
+// ---- Skins ----
+// Each skin defines its own palette (indices 1-9, matching COLORS layout)
+// plus a draw-style identifier consumed by drawBlock().
+const SKINS = {
+  retro: {
+    palette: COLORS,
+    style: 'retro',
+  },
+  neon: {
+    palette: [
+      null,
+      '#00fff9', // I
+      '#fff700', // O
+      '#ff00f7', // T
+      '#39ff14', // S
+      '#ff2d55', // Z
+      '#1e90ff', // J
+      '#ff9100', // L
+      '#b0fcff', // Tuerca
+      '#ff3131', // Bomba
+    ],
+    style: 'neon',
+  },
+  pastel: {
+    palette: [
+      null,
+      '#a8d8e8', // I
+      '#fff2b2', // O
+      '#dcb8e0', // T
+      '#b9e6c9', // S
+      '#f5b8b8', // Z
+      '#b8c9f0', // J
+      '#f5d2a8', // L
+      '#cfd6da', // Tuerca
+      '#e89a9a', // Bomba
+    ],
+    style: 'pastel',
+  },
+  pixel: {
+    palette: COLORS,
+    style: 'pixel',
+  },
+};
+
+const SKIN_KEY = 'tetris-skin';
+let currentSkin = 'retro';
+
 const LINE_SCORES = [0, 100, 300, 500, 800];
 const BOMB_TYPE = 9;
 const BOMB_EVERY_LINES = 10;
@@ -46,6 +93,7 @@ const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 const themeToggle = document.getElementById('theme-toggle');
+const skinSelect = document.getElementById('skin-select');
 
 const THEME_KEY = 'tetris-theme';
 
@@ -77,7 +125,29 @@ themeToggle.addEventListener('change', () => {
   drawNext();
 });
 
+function applySkin(skin) {
+  if (!SKINS[skin]) skin = 'retro';
+  currentSkin = skin;
+  document.body.dataset.skin = skin;
+  skinSelect.value = skin;
+  readThemeColors();
+}
+
+function initSkin() {
+  const saved = localStorage.getItem(SKIN_KEY);
+  applySkin(SKINS[saved] ? saved : 'retro');
+}
+
+skinSelect.addEventListener('change', () => {
+  const skin = skinSelect.value;
+  localStorage.setItem(SKIN_KEY, skin);
+  applySkin(skin);
+  draw();
+  drawNext();
+});
+
 initTheme();
+initSkin();
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -236,31 +306,139 @@ function updateHUD() {
   levelEl.textContent = level;
 }
 
-function drawBlock(context, x, y, colorIndex, size, alpha) {
-  if (!colorIndex) return;
-  const color = COLORS[colorIndex];
-  context.globalAlpha = alpha ?? 1;
+function roundedRectPath(context, rx, ry, rw, rh, radius) {
+  const r = Math.min(radius, rw / 2, rh / 2);
+  context.beginPath();
+  context.moveTo(rx + r, ry);
+  context.arcTo(rx + rw, ry, rx + rw, ry + rh, r);
+  context.arcTo(rx + rw, ry + rh, rx, ry + rh, r);
+  context.arcTo(rx, ry + rh, rx, ry, r);
+  context.arcTo(rx, ry, rx + rw, ry, r);
+  context.closePath();
+}
+
+function drawBombIcon(context, x, y, size, fuseColor) {
+  const cx = x * size + size / 2;
+  const cy = y * size + size / 2;
+  context.beginPath();
+  context.arc(cx, cy, size * 0.28, 0, Math.PI * 2);
+  context.fillStyle = '#1a1a1a';
+  context.fill();
+  context.strokeStyle = fuseColor;
+  context.lineWidth = 1;
+  context.beginPath();
+  context.moveTo(cx + size * 0.12, cy - size * 0.28);
+  context.lineTo(cx + size * 0.22, cy - size * 0.4);
+  context.stroke();
+}
+
+function drawBlockRetro(context, x, y, size, color) {
   context.fillStyle = color;
   context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
-  // highlight
   context.fillStyle = blockHighlightColor;
   context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+}
 
+function drawBlockNeon(context, x, y, size, color) {
+  const rx = x * size + 2;
+  const ry = y * size + 2;
+  const rw = size - 4;
+  const rh = size - 4;
+  const baseAlpha = context.globalAlpha;
+  context.save();
+  context.shadowColor = color;
+  context.shadowBlur = size * 0.6;
+  context.fillStyle = color;
+  context.fillRect(rx, ry, rw, rh);
+  // second pass for a brighter core, glow stacks from shadow only on first pass
+  context.shadowBlur = 0;
+  context.globalAlpha = baseAlpha * 0.85;
+  context.fillStyle = blockHighlightColor;
+  context.fillRect(rx, ry, rw, 3);
+  context.restore();
+  context.strokeStyle = color;
+  context.lineWidth = 1;
+  context.strokeRect(x * size + 1, y * size + 1, size - 2, size - 2);
+}
+
+function drawBlockPastel(context, x, y, size, color) {
+  const rx = x * size + 1.5;
+  const ry = y * size + 1.5;
+  const rw = size - 3;
+  const rh = size - 3;
+  roundedRectPath(context, rx, ry, rw, rh, size * 0.22);
+  context.fillStyle = color;
+  context.fill();
+  context.save();
+  context.clip();
+  context.fillStyle = blockHighlightColor;
+  context.fillRect(rx, ry, rw, 4);
+  context.restore();
+}
+
+let pixelDitherPattern = null;
+let pixelDitherPatternCell = null;
+
+function getPixelDitherPattern(context, size) {
+  const cell = Math.max(2, Math.round(size / 6));
+  if (pixelDitherPattern && pixelDitherPatternCell === cell) return pixelDitherPattern;
+  const tile = document.createElement('canvas');
+  tile.width = cell * 2;
+  tile.height = cell * 2;
+  const tctx = tile.getContext('2d');
+  tctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
+  tctx.fillRect(0, 0, cell, cell);
+  tctx.fillRect(cell, cell, cell, cell);
+  pixelDitherPattern = context.createPattern(tile, 'repeat');
+  pixelDitherPatternCell = cell;
+  return pixelDitherPattern;
+}
+
+function drawBlockPixel(context, x, y, size, color) {
+  const rx = x * size + 1;
+  const ry = y * size + 1;
+  const rw = size - 2;
+  const rh = size - 2;
+  context.fillStyle = color;
+  context.fillRect(rx, ry, rw, rh);
+  // checkered dither overlay drawn via a small repeating pattern tile
+  context.save();
+  context.translate(rx, ry);
+  context.fillStyle = getPixelDitherPattern(context, size);
+  context.fillRect(0, 0, rw, rh);
+  context.restore();
+  context.fillStyle = blockHighlightColor;
+  context.fillRect(rx, ry, rw, 3);
+  context.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+  context.lineWidth = 1;
+  context.strokeRect(rx + 0.5, ry + 0.5, rw - 1, rh - 1);
+}
+
+const SKIN_DRAWERS = {
+  retro: drawBlockRetro,
+  neon: drawBlockNeon,
+  pastel: drawBlockPastel,
+  pixel: drawBlockPixel,
+};
+
+const BOMB_FUSE_COLORS = {
+  retro: () => blockHighlightColor,
+  neon: () => '#ffffff',
+  pastel: () => '#7a7a90',
+  pixel: () => blockHighlightColor,
+};
+
+function drawBlock(context, x, y, colorIndex, size, alpha) {
+  if (!colorIndex) return;
+  const skin = SKINS[currentSkin] || SKINS.retro;
+  const color = skin.palette[colorIndex] || COLORS[colorIndex];
+  const drawer = SKIN_DRAWERS[skin.style] || drawBlockRetro;
+  context.globalAlpha = alpha ?? 1;
+  drawer(context, x, y, size, color);
   if (colorIndex === BOMB_TYPE) {
-    const cx = x * size + size / 2;
-    const cy = y * size + size / 2;
-    context.beginPath();
-    context.arc(cx, cy, size * 0.28, 0, Math.PI * 2);
-    context.fillStyle = '#1a1a1a';
-    context.fill();
-    context.strokeStyle = blockHighlightColor;
-    context.lineWidth = 1;
-    context.beginPath();
-    context.moveTo(cx + size * 0.12, cy - size * 0.28);
-    context.lineTo(cx + size * 0.22, cy - size * 0.4);
-    context.stroke();
+    const fuseColor = (BOMB_FUSE_COLORS[skin.style] || BOMB_FUSE_COLORS.retro)();
+    drawBombIcon(context, x, y, size, fuseColor);
   }
-
   context.globalAlpha = 1;
 }
 
