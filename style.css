@@ -202,6 +202,10 @@ kbd {
   display: none;
 }
 
+.hidden {
+  display: none !important;
+}
+
 .overlay-box {
   text-align: center;
   display: flex;
@@ -239,4 +243,143 @@ kbd {
 
 #restart-btn:hover {
   background: var(--restart-hover);
+}
+
+#start-btn {
+  margin-top: 8px;
+  background: var(--restart-bg);
+  color: var(--restart-text);
+  border: none;
+  border-radius: 6px;
+  padding: 10px 28px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: background 0.15s;
+}
+
+#start-btn:hover {
+  background: var(--restart-hover);
+}
+
+/* ---- Name entry ---- */
+#name-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.highscore-prompt {
+  font-size: 12px;
+  color: var(--value-color);
+  letter-spacing: 0.5px;
+}
+
+#name-input {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--kbd-border);
+  background: var(--kbd-bg);
+  color: var(--text);
+  text-align: center;
+  width: 160px;
+}
+
+#save-score-btn {
+  background: var(--restart-bg);
+  color: var(--restart-text);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: background 0.15s;
+}
+
+#save-score-btn:hover {
+  background: var(--restart-hover);
+}
+
+/* ---- High scores table ---- */
+#highscores-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+#highscores-table {
+  border-collapse: collapse;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  min-width: 220px;
+}
+
+#highscores-table td {
+  padding: 3px 10px;
+  color: var(--text);
+}
+
+#highscores-table td:first-child {
+  text-align: left;
+  color: var(--label-color);
+}
+
+#highscores-table td:nth-child(2) {
+  text-align: left;
+}
+
+#highscores-table td:last-child {
+  text-align: right;
+  color: var(--value-color);
+  font-weight: 700;
+}
+
+#highscores-table tr.highscore-highlight td {
+  color: var(--overlay-title);
+  font-weight: 700;
+}
+
+#highscores-table tr.highscore-empty td {
+  color: var(--label-color);
+  text-align: center;
+  font-style: italic;
+}
+
+.stats-row {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+}
+
+.stats-row .panel-section {
+  align-items: center;
+}
+
+.stats-row .value {
+  font-size: 18px;
+}
+
+#reset-records-btn {
+  background: transparent;
+  color: var(--controls-text);
+  border: 1px solid var(--kbd-border);
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-size: 11px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background 0.15s, color 0.15s;
+}
+
+#reset-records-btn:hover {
+  background: var(--kbd-bg);
+  color: var(--overlay-title);
 }
