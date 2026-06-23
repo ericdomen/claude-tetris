@@ -46,6 +46,19 @@ body.light {
   --block-highlight: rgba(255, 255, 255, 0.4);
 }
 
+/* ---- Skins: solo afectan el tablero/canvas, no la cromática de la página ---- */
+body.skin-neon {
+  --board-bg: #000000;
+  --board-border: #000000;
+  --grid-line: #111111;
+  --block-highlight: rgba(255, 255, 255, 0.25);
+}
+
+body.skin-pastel {
+  --grid-line: rgba(0, 0, 0, 0.06);
+  --block-highlight: rgba(255, 255, 255, 0.5);
+}
+
 body {
   background: var(--bg);
   color: var(--text);
@@ -158,6 +171,24 @@ body {
 
 .theme-switch input:checked + .theme-switch-slider::before {
   transform: translateX(18px);
+}
+
+/* ---- Skin selector ---- */
+.skin-select-section {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.skin-select {
+  background: var(--kbd-bg);
+  color: var(--text);
+  border: 1px solid var(--kbd-border);
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
 }
 
 /* ---- Controles ---- */
