@@ -240,3 +240,119 @@ kbd {
 #restart-btn:hover {
   background: var(--restart-hover);
 }
+
+.start-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: var(--value-color);
+}
+
+/* ---- Name entry ---- */
+.name-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.name-entry.hidden {
+  display: none;
+}
+
+#player-name {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 6px 10px;
+  text-align: center;
+  width: 140px;
+}
+
+#save-score-btn {
+  background: var(--restart-bg);
+  color: var(--restart-text);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: background 0.15s;
+}
+
+#save-score-btn:hover {
+  background: var(--restart-hover);
+}
+
+/* ---- Scoreboard ---- */
+.scoreboard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.scoreboard-table {
+  width: 220px;
+  border-collapse: collapse;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+}
+
+.scoreboard-table td {
+  padding: 3px 6px;
+  color: var(--text);
+}
+
+.scoreboard-table td.rank-col {
+  color: var(--label-color);
+  width: 20px;
+}
+
+.scoreboard-table td.score-col {
+  text-align: right;
+  color: var(--value-color);
+  font-weight: 700;
+}
+
+.scoreboard-table .empty-row td {
+  color: var(--label-color);
+  text-align: center;
+  font-size: 12px;
+  padding: 8px;
+}
+
+.scoreboard-table .highlight-row td {
+  color: var(--overlay-title);
+  font-weight: 700;
+}
+
+.scoreboard-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--controls-text);
+}
+
+.reset-scores-btn {
+  background: none;
+  border: 1px solid var(--kbd-border);
+  color: var(--controls-text);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 11px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.reset-scores-btn:hover {
+  background: var(--kbd-bg);
+  color: var(--text);
+}
