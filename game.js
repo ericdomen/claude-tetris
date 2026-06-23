@@ -14,6 +14,7 @@ const COLORS = [
   '#64b5f6', // J - pale blue
   '#ffb74d', // L - orange
   '#90a4ae', // Tuerca - gris metálico
+  '#d32f2f', // Bomba - rojo intenso
 ];
 
 const PIECES = [
@@ -29,6 +30,9 @@ const PIECES = [
 ];
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
+const BOMB_TYPE = 9;
+const BOMB_EVERY_LINES = 10;
+const BOMB_SCORE = 50;
 
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
@@ -45,7 +49,7 @@ const themeToggle = document.getElementById('theme-toggle');
 
 const THEME_KEY = 'tetris-theme';
 
-let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, bombReady;
 let gridLineColor, blockHighlightColor;
 
 function readThemeColors() {
@@ -83,6 +87,10 @@ function randomPiece() {
   const type = Math.floor(Math.random() * 8) + 1;
   const shape = PIECES[type].map(row => [...row]);
   return { type, shape, x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2), y: 0 };
+}
+
+function makeBomb() {
+  return { type: BOMB_TYPE, shape: [[BOMB_TYPE]], isBomb: true, x: Math.floor(COLS / 2), y: 0 };
 }
 
 function collide(shape, ox, oy) {
@@ -137,10 +145,14 @@ function clearLines() {
     }
   }
   if (cleared) {
+    const prevLines = lines;
     lines += cleared;
     score += (LINE_SCORES[cleared] || 0) * level;
     level = Math.floor(lines / 10) + 1;
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
+    if (Math.floor(lines / BOMB_EVERY_LINES) > Math.floor(prevLines / BOMB_EVERY_LINES)) {
+      bombReady = true;
+    }
     updateHUD();
   }
 }
@@ -169,14 +181,49 @@ function softDrop() {
 }
 
 function lockPiece() {
-  merge();
-  clearLines();
+  if (current.isBomb) {
+    detonate();
+  } else {
+    merge();
+    clearLines();
+  }
   spawn();
+}
+
+function detonate() {
+  const cx = current.x;
+  const cy = current.y;
+  for (let r = cy - 1; r <= cy + 1; r++) {
+    if (r < 0 || r >= ROWS) continue;
+    for (let c = cx - 1; c <= cx + 1; c++) {
+      if (c < 0 || c >= COLS) continue;
+      board[r][c] = 0;
+    }
+  }
+  score += BOMB_SCORE * level;
+  applyGravity();
+  clearLines();
+  updateHUD();
+}
+
+function applyGravity() {
+  for (let c = 0; c < COLS; c++) {
+    let write = ROWS - 1;
+    for (let r = ROWS - 1; r >= 0; r--) {
+      if (board[r][c]) {
+        board[write][c] = board[r][c];
+        if (write !== r) board[r][c] = 0;
+        write--;
+      }
+    }
+    for (let r = write; r >= 0; r--) board[r][c] = 0;
+  }
 }
 
 function spawn() {
   current = next;
-  next = randomPiece();
+  next = bombReady ? makeBomb() : randomPiece();
+  bombReady = false;
   if (collide(current.shape, current.x, current.y)) {
     endGame();
   }
@@ -198,6 +245,22 @@ function drawBlock(context, x, y, colorIndex, size, alpha) {
   // highlight
   context.fillStyle = blockHighlightColor;
   context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+
+  if (colorIndex === BOMB_TYPE) {
+    const cx = x * size + size / 2;
+    const cy = y * size + size / 2;
+    context.beginPath();
+    context.arc(cx, cy, size * 0.28, 0, Math.PI * 2);
+    context.fillStyle = '#1a1a1a';
+    context.fill();
+    context.strokeStyle = blockHighlightColor;
+    context.lineWidth = 1;
+    context.beginPath();
+    context.moveTo(cx + size * 0.12, cy - size * 0.28);
+    context.lineTo(cx + size * 0.22, cy - size * 0.4);
+    context.stroke();
+  }
+
   context.globalAlpha = 1;
 }
 
@@ -297,6 +360,7 @@ function init() {
   level = 1;
   paused = false;
   gameOver = false;
+  bombReady = false;
   dropInterval = 1000;
   dropAccum = 0;
   lastTime = performance.now();
